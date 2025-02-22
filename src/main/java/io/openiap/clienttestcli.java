@@ -418,9 +418,9 @@ public class clienttestcli {
                     new RegisterQueueParameters.Builder()
                             .queuename("test2queue")
                             .build(),
-                    (result) -> {
-                        System.out.println("Queue result: " + result.data + " on " + result.queuename);
+                    (eventPtr) -> {
                         queuemessagecount++;
+                        return "";
                     });
             System.out.println("Wait for message sent to queue " + queuename);
 
@@ -503,6 +503,7 @@ public class clienttestcli {
                 exctimer.cancel();
             }
             client.disconnect();
+            client.close(); 
             System.out.println("CLI executed successfully!");
         }
     }
