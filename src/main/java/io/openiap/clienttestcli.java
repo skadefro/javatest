@@ -42,21 +42,21 @@ public class clienttestcli {
 
             client.onClientEventAsync(
                     (event) -> {
-                        System.out.println("Event: " + event.event + " Reason: " + event.reason);
+                        client.info("Event: " + event.event + " Reason: " + event.reason);
                     });
             User user = client.getUser();
             if (user != null) {
-                System.out.println("User ID: " + user.id);
-                System.out.println("User Name: " + user.name);
-                System.out.println("User Username: " + user.username);
-                System.out.println("User Email: " + user.email);
-                System.out.println("User Roles Pointer: " + user.roles);
+                client.info("User ID: " + user.id);
+                client.info("User Name: " + user.name);
+                client.info("User Username: " + user.username);
+                client.info("User Email: " + user.email);
+                client.info("User Roles Pointer: " + user.roles);
                 var roles = user.getRoleList();
                 for (int i = 0; i < roles.size(); i++) {
-                    System.out.println("Role[" + i + "]: " + roles.get(i));
+                    client.info("Role[" + i + "]: " + roles.get(i));
                 }
             } else {
-                System.out.println("No user found.");
+                client.info("No user found.");
             }
             var jwt = client.signin(
                     new SigninParameters.Builder()
@@ -64,21 +64,21 @@ public class clienttestcli {
                             .password(System.getenv("testpassword"))
                             .validateonly(true)
                             .build());
-            System.out.println("Signin: " + jwt);
+            client.info("Signin: " + jwt);
 
             user = client.getUser();
             if (user != null) {
-                System.out.println("User ID: " + user.id);
-                System.out.println("User Name: " + user.name);
-                System.out.println("User Username: " + user.username);
-                System.out.println("User Email: " + user.email);
-                System.out.println("User Roles Pointer: " + user.roles);
+                client.info("User ID: " + user.id);
+                client.info("User Name: " + user.name);
+                client.info("User Username: " + user.username);
+                client.info("User Email: " + user.email);
+                client.info("User Roles Pointer: " + user.roles);
                 var roles = user.getRoleList();
                 for (int i = 0; i < roles.size(); i++) {
-                    System.out.println("Role[" + i + "]: " + roles.get(i));
+                    client.info("Role[" + i + "]: " + roles.get(i));
                 }
             } else {
-                System.out.println("No user found.");
+                client.info("No user found.");
             }
 
             QueryParameters queryParams = new QueryParameters.Builder()
@@ -91,7 +91,7 @@ public class clienttestcli {
             }.getType(), queryParams);
             if (results != null) {
                 for (Entity item : results) {
-                    System.out.println("Item: " + item._type + " " + item._id + " " + item.name);
+                    client.info("Item: " + item._type + " " + item._id + " " + item.name);
                 }
             }
 
@@ -99,7 +99,7 @@ public class clienttestcli {
             // queryParams.query = "{}";
             queryParams.query = "{\"_type\":\"test\"}";
             String jsonResult = client.query(String.class, queryParams);
-            System.out.println("Raw JSON Result: " + jsonResult);
+            client.info("Raw JSON Result: " + jsonResult);
 
             AggregateParameters aggregateParams = new AggregateParameters.Builder()
                     .collectionname("entities")
@@ -107,12 +107,12 @@ public class clienttestcli {
                     .build();
 
             String aggregateJsonResult = client.aggregate(String.class, aggregateParams);
-            System.out.println("Raw JSON Aggregate Result: " + aggregateJsonResult);
+            client.info("Raw JSON Aggregate Result: " + aggregateJsonResult);
             List<Entity> aggregate = client.aggregate(new TypeReference<List<Entity>>() {
             }.getType(), aggregateParams);
             if (aggregate != null) {
                 for (Entity item : aggregate) {
-                    System.out.println("Item: " + item._type + " " + item._id + " " + item.name);
+                    client.info("Item: " + item._type + " " + item._id + " " + item.name);
                 }
             }
 
@@ -120,19 +120,19 @@ public class clienttestcli {
                     .build();
             boolean Colcreated = client.createCollection(createColParams);
             if (Colcreated) {
-                System.out.println("Collection created successfully!");
+                client.info("Collection created successfully!");
             } else {
-                System.err.println("Failed to create collection!");
+                client.error("Failed to create collection!");
             }
             List<Index> indexes = client.getIndexes("testjavacollection");
             if (indexes != null) {
                 for (Index index : indexes) {
-                    System.out.println(" Index Name: " + index.name);
-                    System.out.println(" Index Key: " + index.key.toString());
-                    System.out.println(" Index Unique: " + index.unique);
-                    System.out.println(" Index Sparse: " + index.sparse);
-                    System.out.println(" Index Background: " + index.background);
-                    System.out.println(" Index ExpireAfterSeconds: " + index.expireAfterSeconds);
+                    client.info(" Index Name: " + index.name);
+                    client.info(" Index Key: " + index.key.toString());
+                    client.info(" Index Unique: " + index.unique);
+                    client.info(" Index Sparse: " + index.sparse);
+                    client.info(" Index Background: " + index.background);
+                    client.info(" Index ExpireAfterSeconds: " + index.expireAfterSeconds);
                     if (index.name.equals("_type_1")) {
                         client.dropIndex("testjavacollection", index.name);
                     }
@@ -150,9 +150,9 @@ public class clienttestcli {
                     .build();
             boolean ExpColcreated = client.createCollection(createExpColParams);
             if (ExpColcreated) {
-                System.out.println("Collection created successfully!");
+                client.info("Collection created successfully!");
             } else {
-                System.err.println("Failed to create collection!");
+                client.error("Failed to create collection!");
             }
             // client.dropCollection("testjavaexpcollection");
 
@@ -163,9 +163,9 @@ public class clienttestcli {
                     .build();
             boolean TSColcreated = client.createCollection(createTSColParams);
             if (TSColcreated) {
-                System.out.println("Collection created successfully!");
+                client.info("Collection created successfully!");
             } else {
-                System.err.println("Failed to create collection!");
+                client.error("Failed to create collection!");
             }
             // client.dropCollection("testjavatscollection");
             ColTimeseriesWrapper timeseries2 = new ColTimeseriesWrapper(TimeUnit.MINUTES,
@@ -175,14 +175,14 @@ public class clienttestcli {
                     .build();
             boolean TSColcreated2 = client.createCollection(createTSColParams2);
             if (TSColcreated2) {
-                System.out.println("Collection created successfully!");
+                client.info("Collection created successfully!");
             } else {
-                System.err.println("Failed to create collection!");
+                client.error("Failed to create collection!");
             }
             // client.dropCollection("testjavats2collection");
 
             var str_collections = client.listCollections(false);
-            System.out.println("Collections: " + str_collections);
+            client.info("Collections: " + str_collections);
             List<Collection> collections = client.listCollections(
                     new TypeReference<List<Collection>>() {
                     }.getType(),
@@ -190,18 +190,18 @@ public class clienttestcli {
 
             // Print collection details
             for (Collection collection : collections) {
-                System.out.println("Collection name: " + collection.name);
-                System.out.println("Type: " + collection.type);
+                client.info("Collection name: " + collection.name);
+                client.info("Type: " + collection.type);
                 if (collection.info != null && collection.idIndex != null) {
-                    System.out.println("UUID: " + collection.info.uuid + " ReadOnly: " +
+                    client.info("UUID: " + collection.info.uuid + " ReadOnly: " +
                             collection.info.readOnly + " _id index: " + collection.idIndex.name);
                 } else if (collection.info != null) {
-                    System.out.println("UUID: " + collection.info.uuid + " ReadOnly: " +
+                    client.info("UUID: " + collection.info.uuid + " ReadOnly: " +
                             collection.info.readOnly);
                 } else if (collection.idIndex != null) {
-                    System.out.println("_id index: " + collection.idIndex.name);
+                    client.info("_id index: " + collection.idIndex.name);
                 }
-                System.out.println("---");
+                client.info("---");
             }
 
             InsertOneParameters insertOneParams = new InsertOneParameters.Builder()
@@ -210,7 +210,7 @@ public class clienttestcli {
                     .build();
 
             String insertOneResult = client.insertOne(insertOneParams);
-            System.out.println("InsertOne Result (JSON): " + insertOneResult);
+            client.info("InsertOne Result (JSON): " + insertOneResult);
 
             InsertOneParameters insertOneParams2 = new InsertOneParameters.Builder()
                     .collectionname("entities")
@@ -218,7 +218,7 @@ public class clienttestcli {
                     .build();
 
             Entity insertedEntity = client.insertOne(Entity.class, insertOneParams2);
-            System.out.println("InsertOne Result (Entity): " + insertedEntity.name +
+            client.info("InsertOne Result (Entity): " + insertedEntity.name +
                     "id: " + insertedEntity._id);
 
             insertedEntity._id = null;
@@ -228,7 +228,7 @@ public class clienttestcli {
                     .build();
 
             Entity insertedEntity3 = client.insertOne(Entity.class, insertOneParams3);
-            System.out.println("InsertOne Result (Entity): " + insertedEntity3.name +
+            client.info("InsertOne Result (Entity): " + insertedEntity3.name +
                     "id: " + insertedEntity3._id);
 
             UpdateOneParameters updateOneParams = new UpdateOneParameters.Builder()
@@ -237,7 +237,7 @@ public class clienttestcli {
                     .build();
 
             String updateOneResult = client.updateOne(updateOneParams);
-            System.out.println("UpdateOne Result (JSON): " + updateOneResult);
+            client.info("UpdateOne Result (JSON): " + updateOneResult);
 
             insertedEntity3.name = "test02-updated-again";
             UpdateOneParameters updateOneParams2 = new UpdateOneParameters.Builder()
@@ -246,7 +246,7 @@ public class clienttestcli {
                     .build();
 
             Entity updatedEntity = client.updateOne(Entity.class, updateOneParams2);
-            System.out.println("UpdateOne Result (Entity): " + updatedEntity.name + " id: " + updatedEntity._id);
+            client.info("UpdateOne Result (Entity): " + updatedEntity.name + " id: " + updatedEntity._id);
 
             InsertOrUpdateOneParameters insertOrUpdateOneParams = new InsertOrUpdateOneParameters.Builder()
                     .collectionname("entities")
@@ -256,7 +256,7 @@ public class clienttestcli {
                     .build();
 
             String insertOrUpdateOneResult = client.insertOrUpdateOne(insertOrUpdateOneParams);
-            System.out.println("InsertOrUpdateOne Result (JSON): " +
+            client.info("InsertOrUpdateOne Result (JSON): " +
                     insertOrUpdateOneResult);
 
             InsertOrUpdateOneParameters insertOrUpdateOneParams2 = new InsertOrUpdateOneParameters.Builder()
@@ -268,7 +268,7 @@ public class clienttestcli {
 
             updatedEntity = client.insertOrUpdateOne(Entity.class,
                     insertOrUpdateOneParams2);
-            System.out.println("InsertOrUpdateOne Result (Entity): " + updatedEntity.name
+            client.info("InsertOrUpdateOne Result (Entity): " + updatedEntity.name
                     + " id: " + updatedEntity._id);
 
             List<Object> entities = new ArrayList<>();
@@ -293,7 +293,7 @@ public class clienttestcli {
                     .build();
 
             String insertManyResult = client.insertMany(insertManyParams);
-            System.out.println("InsertMany Result (JSON): " + insertManyResult);
+            client.info("InsertMany Result (JSON): " + insertManyResult);
 
             String jsonItems = "[{\"_type\":\"test\", \"java\":\"many\", \"name\":\"insertmany3\"}, {\"_type\":\"test\", \"java\":\"many\", \"name\":\"insertmany4\"}]";
             InsertManyParameters insertManyParams2 = new InsertManyParameters.Builder()
@@ -303,9 +303,9 @@ public class clienttestcli {
 
             List<Entity> insertedEntities = client.insertMany(new TypeReference<List<Entity>>() {
             }.getType(), insertManyParams2);
-            System.out.println("InsertMany Result (Entity List):");
+            client.info("InsertMany Result (Entity List):");
             for (Entity entity : insertedEntities) {
-                System.out.println(" " + entity.name + " id: " + entity._id);
+                client.info(" " + entity.name + " id: " + entity._id);
                 client.deleteOne(
                         new DeleteOneParameters.Builder()
                                 .collectionname("entities")
@@ -321,18 +321,18 @@ public class clienttestcli {
                     null // or an array of ids
             );
             if (deletecount == 0) {
-                System.out.println("No entities deleted.");
+                client.info("No entities deleted.");
             } else {
-                System.out.println("Deleted " + deletecount + " entities.");
+                client.info("Deleted " + deletecount + " entities.");
             }
 
             gotwatchevent = false;
             Client.WatchEventCallback eventCallback = new Client.WatchEventCallback() {
                 @Override
                 public void onEvent(WatchEvent event) {
-                    System.out.println("Received watch event:");
-                    System.out.println(" Operation: " + event.operation);
-                    System.out.println(" Document: " + event.document);
+                    client.info("Received watch event:");
+                    client.info(" Operation: " + event.operation);
+                    client.info(" Document: " + event.document);
                     gotwatchevent = true;
                 }
             };
@@ -342,7 +342,7 @@ public class clienttestcli {
                     .build();
 
             String watchId = client.watchAsync(watchParams, eventCallback);
-            System.out.println("Watch started with id: " + watchId);
+            client.info("Watch started with id: " + watchId);
 
             client.insertOne(Entity.class,
                     new InsertOneParameters.Builder()
@@ -364,10 +364,10 @@ public class clienttestcli {
                             .collectionname("entities")
                             .build(),
                     (result) -> {
-                        System.out.println("Watch2 result: " + result.operation + " on " + result.id
+                        client.info("Watch2 result: " + result.operation + " on " + result.id
                                 + " " + result.document);
                     });
-            System.out.println("Watch2 started with id: " + watchId);
+            client.info("Watch2 started with id: " + watchId);
             client.unwatch(watchId);
 
             InsertOneParameters insertOneParams4 = new InsertOneParameters.Builder()
@@ -382,7 +382,7 @@ public class clienttestcli {
                     .build();
 
             Entity insertedEntity4 = client.insertOne(Entity.class, insertOneParams4);
-            System.out.println("InsertOne Result (Entity): " + insertedEntity4.name + "id: " + insertedEntity4._id);
+            client.info("InsertOne Result (Entity): " + insertedEntity4.name + "id: " + insertedEntity4._id);
 
             var id = client.upload(
                     new UploadParameters.Builder()
@@ -391,28 +391,28 @@ public class clienttestcli {
                             .metadata("{\"_type\":\"test\"}")
                             .collectionname("fs.files")
                             .build());
-            System.out.println("testfile.csv uploaded as " + id);
+            client.info("testfile.csv uploaded as " + id);
             var filename = client.download(
                     new DownloadParameters.Builder()
                             .collectionname("fs.files")
                             .filename("train.csv")
                             .id(id)
                             .build());
-            System.out.println(id + " downloaded as " + filename);
+            client.info(id + " downloaded as " + filename);
 
             var count = client.count(
                     new CountParameters.Builder()
                             .collectionname("entities")
                             .query("{\"_type\":\"test\"}")
                             .build());
-            System.out.println("Count: " + count);
+            client.info("Count: " + count);
 
             var distinct = client.distinct(
                     new DistinctParameters.Builder()
                             .collectionname("entities")
                             .field("_type")
                             .build());
-            System.out.println("Distinct: " + distinct);
+            client.info("Distinct: " + distinct);
 
             var queuename = client.registerQueueAsync(
                     new RegisterQueueParameters.Builder()
@@ -422,7 +422,7 @@ public class clienttestcli {
                         queuemessagecount++;
                         return "";
                     });
-            System.out.println("Wait for message sent to queue " + queuename);
+            client.info("Wait for message sent to queue " + queuename);
 
             queuetimer = new Timer(true);
             queuetimer.scheduleAtFixedRate(new TimerTask() {
@@ -449,7 +449,7 @@ public class clienttestcli {
             do {
                 Thread.sleep(1000);
             } while (queuemessagecount < 3);
-            System.out.println("Quere message received");
+            client.info("Quere message received");
             client.unregisterQueue(queuename);
 
             var excqueuename = client.registerExchangeAsync(
@@ -459,10 +459,10 @@ public class clienttestcli {
                             .addqueue(true)
                             .build(),
                     (result) -> {
-                        System.out.println("Exchange result: " + result.data + " on " + result.queuename);
+                        client.info("Exchange result: " + result.data + " on " + result.queuename);
                         exchangemessagecount++;
                     });
-            System.out.println("Wait for message sent to exchange queue " + excqueuename);
+            client.info("Wait for message sent to exchange queue " + excqueuename);
 
             exctimer = new Timer(true);
             exctimer.scheduleAtFixedRate(new TimerTask() {
@@ -490,7 +490,7 @@ public class clienttestcli {
             do {
                 Thread.sleep(1000);
             } while (exchangemessagecount < 3);
-            System.out.println("Exchange message received");
+            client.info("Exchange message received");
             client.unregisterQueue(excqueuename);
 
         } catch (Exception e) {
@@ -504,7 +504,7 @@ public class clienttestcli {
             }
             client.disconnect();
             client.close(); 
-            System.out.println("CLI executed successfully!");
+            client.info("CLI executed successfully!");
         }
     }
 }

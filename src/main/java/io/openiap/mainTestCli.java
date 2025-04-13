@@ -9,6 +9,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.Future;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ScheduledFuture;
+import java.util.Random;
 
 public class mainTestCli {
     private static Client client;
@@ -17,6 +21,12 @@ public class mainTestCli {
     private static ExecutorService executor;
     private static Future<?> runningTask;
     private static AtomicBoolean taskRunning = new AtomicBoolean(false);
+    
+    // Scheduled executor for the observable gauge timers
+    private static ScheduledExecutorService scheduledExecutor;
+    private static ScheduledFuture<?> f64GaugeTask;
+    private static ScheduledFuture<?> u64GaugeTask;
+    private static ScheduledFuture<?> i64GaugeTask;
 
     public static void main(String[] args) {
         System.out.println("CLI initializing...");
@@ -24,12 +34,13 @@ public class mainTestCli {
         client = new Client(libpath);
         scanner = new Scanner(System.in);
         executor = Executors.newSingleThreadExecutor();
+        scheduledExecutor = Executors.newScheduledThreadPool(3);
         try {
             // client.enableTracing("openiap=trace", "");
             client.enableTracing("openiap=info", "");
             client.start();
             client.connect("");
-            System.out.println("? for help");
+            client.info("? for help");
             // Simple check to see if we are running inside a container, then run the st_func
             if(System.getenv("oidc_config") != null && System.getenv("oidc_config") != "") {
                 handleStartTask();
@@ -44,6 +55,9 @@ public class mainTestCli {
         } finally {
             if (executor != null) {
                 executor.shutdownNow();
+            }
+            if (scheduledExecutor != null) {
+                scheduledExecutor.shutdownNow();
             }
             if (client != null) {
                 client.disconnect();
@@ -61,6 +75,15 @@ public class mainTestCli {
                 break;
             case "t":
                 clienttestcli.RunAll();
+                break;
+            case "o":
+                handleObservable();
+                break;
+            case "o2":
+                handleObservableU64();
+                break;
+            case "o3":
+                handleObservableI64();
                 break;
             case "q":
                 handleQuery();
@@ -108,7 +131,7 @@ public class mainTestCli {
                 running = false;
                 break;
             default:
-                System.out.println("Unknown command. Type ? for help.");
+                client.info("Unknown command. Type ? for help.");
                 break;
         }
     }
@@ -131,7 +154,82 @@ public class mainTestCli {
         System.out.println("  w    - Watch collection");
         System.out.println("  st   - Start/stop task (workitem processing)");
         System.out.println("  st2  - Start/stop task (continuous testing)");
+        System.out.println("  o    - Toggle f64 observable gauge");
+        System.out.println("  o2   - Toggle u64 observable gauge");
+        System.out.println("  o3   - Toggle i64 observable gauge");
         System.out.println("  quit - Exit program");
+    }
+
+    private static void handleObservable() {
+        try {
+            if (f64GaugeTask != null && !f64GaugeTask.isDone()) {
+                client.disable_observable_gauge("test_f64");
+                f64GaugeTask.cancel(false);
+                f64GaugeTask = null;
+                client.info("stopped test_f64");
+                return;
+            }
+            
+            client.set_f64_observable_gauge("test_f64", 42.7, "test");
+            client.info("started test_f64 to 42.7");
+            
+            Random random = new Random();
+            f64GaugeTask = scheduledExecutor.scheduleAtFixedRate(() -> {
+                double randomValue = random.nextDouble() * 50;
+                client.info("Setting test_f64 to " + randomValue);
+                client.set_f64_observable_gauge("test_f64", randomValue, "test");
+            }, 30, 30, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            client.error("Observable gauge error: " + e.getMessage());
+        }
+    }
+    
+    private static void handleObservableU64() {
+        try {
+            if (u64GaugeTask != null && !u64GaugeTask.isDone()) {
+                client.disable_observable_gauge("test_u64");
+                u64GaugeTask.cancel(false);
+                u64GaugeTask = null;
+                client.info("stopped test_u64");
+                return;
+            }
+            
+            client.set_u64_observable_gauge("test_u64", 42, "test");
+            client.info("started test_u64 to 42");
+            
+            Random random = new Random();
+            u64GaugeTask = scheduledExecutor.scheduleAtFixedRate(() -> {
+                long randomValue = (long) (random.nextDouble() * 50);
+                client.info("Setting test_u64 to " + randomValue);
+                client.set_u64_observable_gauge("test_u64", randomValue, "test");
+            }, 30, 30, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            client.error("Observable gauge error: " + e.getMessage());
+        }
+    }
+    
+    private static void handleObservableI64() {
+        try {
+            if (i64GaugeTask != null && !i64GaugeTask.isDone()) {
+                client.disable_observable_gauge("test_i64");
+                i64GaugeTask.cancel(false);
+                i64GaugeTask = null;
+                client.info("stopped test_i64");
+                return;
+            }
+            
+            client.set_i64_observable_gauge("test_i64", 42, "test");
+            client.info("started test_i64 to 42");
+            
+            Random random = new Random();
+            i64GaugeTask = scheduledExecutor.scheduleAtFixedRate(() -> {
+                long randomValue = (long) (random.nextDouble() * 50) - 25; // Allow negative values for i64
+                client.info("Setting test_i64 to " + randomValue);
+                client.set_i64_observable_gauge("test_i64", randomValue, "test");
+            }, 30, 30, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            client.error("Observable gauge error: " + e.getMessage());
+        }
     }
 
     private static void handleQuery() {
@@ -144,11 +242,11 @@ public class mainTestCli {
                     .build());
             if (results != null) {
                 for (clienttestcli.Entity item : results) {
-                    System.out.println("Item: " + item._type + " " + item._id + " " + item.name);
+                    client.info("Item: " + item._type + " " + item._id + " " + item.name);
                 }
             }
         } catch (Exception e) {
-            System.out.println("Query error: " + e.getMessage());
+            client.error("Query error: " + e.getMessage());
         }
     }
 
@@ -159,9 +257,9 @@ public class mainTestCli {
                     .collectionname("entities")
                     .query("{}")
                     .build());
-            System.out.println("Results: " + jsonResult);
+            client.info("Results: " + jsonResult);
         } catch (Exception e) {
-            System.out.println("Query error: " + e.getMessage());
+            client.error("Query error: " + e.getMessage());
         }
     }
 
@@ -172,9 +270,9 @@ public class mainTestCli {
                     .collectionname("entities")
                     .field("_type")
                     .build());
-            System.out.println("Distinct types: " + distinct);
+            client.info("Distinct types: " + distinct);
         } catch (Exception e) {
-            System.out.println("Distinct error: " + e.getMessage());
+            client.error("Distinct error: " + e.getMessage());
         }
     }
 
@@ -190,9 +288,9 @@ public class mainTestCli {
                 // .nextrun(System.currentTimeMillis() + 10000)
                 .priority(1)
                 .build());
-            System.out.println("Pushed workitem: " + result);
+            client.info("Pushed workitem: " + result);
         } catch (Exception e) {
-            System.out.println("PushWorkitem error: " + e.getMessage());
+            client.error("PushWorkitem error: " + e.getMessage());
         }
     }
 
@@ -216,11 +314,11 @@ public class mainTestCli {
                 // Push the workitem and get back a typed response
                 Workitem result = client.pushWorkitem(Workitem.class, pushWorkitem);
                 
-                System.out.println("Pushed workitem: " + result.id + " name: " + result.name);
+                client.info("Pushed workitem: " + result.id + " name: " + result.name);
                 if (result.files != null) {
-                    System.out.println("Files: " + result.files.size());
+                    client.info("Files: " + result.files.size());
                     for (WorkitemFile f : result.files) {
-                        System.out.println("  - " + f.filename + " (id: " + f.id + ")");
+                        client.info("  - " + f.filename + " (id: " + f.id + ")");
                     }
                 }
             } finally {
@@ -228,7 +326,7 @@ public class mainTestCli {
                 builder.cleanup();
             }
         } catch (Exception e) {
-            System.out.println("PushWorkitem error: " + e.getMessage());
+            client.error("PushWorkitem error: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -239,9 +337,9 @@ public class mainTestCli {
                 .username("guest")
                 .password("guest")
                 .build());
-            System.out.println("Signin result: " + result);
+            client.info("Signin result: " + result);
         } catch (Exception e) {
-            System.out.println("Signin error: " + e.getMessage());
+            client.error("Signin error: " + e.getMessage());
         }
     }
 
@@ -251,9 +349,9 @@ public class mainTestCli {
                 .username(System.getenv("testusername"))
                 .password(System.getenv("testpassword"))
                 .build());
-            System.out.println("Signin result: " + result);
+            client.info("Signin result: " + result);
         } catch (Exception e) {
-            System.out.println("Signin error: " + e.getMessage());
+            client.error("Signin error: " + e.getMessage());
         }
     }
 
@@ -267,9 +365,9 @@ public class mainTestCli {
                     .collectionname("entities")
                     .itemFromObject(entity)
                     .build());
-            System.out.println("Inserted: " + result._id);
+            client.info("Inserted: " + result._id);
         } catch (Exception e) {
-            System.out.println("Insert error: " + e.getMessage());
+            client.error("Insert error: " + e.getMessage());
         }
     }
 
@@ -283,11 +381,11 @@ public class mainTestCli {
                     .build());
             if (results != null) {
                 for (clienttestcli.Entity entity : results) {
-                    System.out.println("Inserted: " + entity._id + " - " + entity.name);
+                    client.info("Inserted: " + entity._id + " - " + entity.name);
                 }
             }
         } catch (Exception e) {
-            System.out.println("Insert many error: " + e.getMessage());
+            client.error("Insert many error: " + e.getMessage());
         }
     }
 
@@ -298,29 +396,29 @@ public class mainTestCli {
                     .collectionname("entities")
                     .build(),
                 (event) -> {
-                    System.out.println("Watch event: " + event.operation + " on " + event.id);
-                    System.out.println("Document: " + event.document);
+                    client.info("Watch event: " + event.operation + " on " + event.id);
+                    client.info("Document: " + event.document);
                 });
-            System.out.println("Watch started with ID: " + watchId);
-            System.out.println("(Events will appear as they happen. Start a new operation to trigger events)");
+            client.info("Watch started with ID: " + watchId);
+            client.info("(Events will appear as they happen. Start a new operation to trigger events)");
         } catch (Exception e) {
-            System.out.println("Watch error: " + e.getMessage());
+            client.error("Watch error: " + e.getMessage());
         }
     }
 
     private static void handleStartTask() {
         if (taskRunning.get()) {
-            System.out.println("Stopping running task.");
+            client.info("Stopping running task.");
             if (runningTask != null) {
                 runningTask.cancel(true);
             }
             taskRunning.set(false);
             return;
         }
-        System.out.println("Starting task...");
+        client.info("Starting task...");
         taskRunning.set(true);
         runningTask = executor.submit(() -> {
-            System.out.println("Task started, begin loop...");
+            client.info("Task started, begin loop...");
             Runtime runtime = Runtime.getRuntime();
             int x = 0;
             while (taskRunning.get() && !Thread.currentThread().isInterrupted()) {
@@ -329,7 +427,7 @@ public class mainTestCli {
                     // Add memory usage logging every 100 iterations
                     if (x % 100 == 0) {
                         long usedMemory = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024;
-                        System.out.println("Memory usage: " + usedMemory + "MB");
+                        client.info("Memory usage: " + usedMemory + "MB");
                     }
                     
                     PopWorkitem popRequest = new PopWorkitem.Builder("q2").build();
@@ -338,19 +436,19 @@ public class mainTestCli {
                     Thread.sleep(1);
                     
                     if (workitem != null) {
-                        System.out.println("Updating " + workitem.id + " " + workitem.name);
+                        client.info("Updating " + workitem.id + " " + workitem.name);
                         workitem.state = "successful";
                         UpdateWorkitem.Builder builder = new UpdateWorkitem.Builder(workitem);
                         UpdateWorkitem updateRequest = builder.build();
                         workitem = client.updateWorkitem(Workitem.class, updateRequest);
                     } else {
                         if (x % 500 == 0) {
-                            System.out.println("No new workitem " + new java.util.Date());
+                            client.info("No new workitem " + new java.util.Date());
                             System.gc();
                         }
                     }
                 } catch (Exception e) {
-                    System.out.println("Error in task loop: ");
+                    client.error("Error in task loop: ");
                     e.printStackTrace(System.out);  // Print full stack trace
                     try {
                         Thread.sleep(5000); // Add delay after error
@@ -360,13 +458,13 @@ public class mainTestCli {
                     }
                 }
             }
-            System.out.println("Task canceled.");
+            client.info("Task canceled.");
         });
     }
 
     private static void handleStartTask2() {
         if (taskRunning.get()) {
-            System.out.println("Stopping running task.");
+            client.info("Stopping running task.");
             if (runningTask != null) {
                 runningTask.cancel(true);
             }
@@ -376,7 +474,7 @@ public class mainTestCli {
 
         taskRunning.set(true);
         runningTask = executor.submit(() -> {
-            System.out.println("Task started, begin loop...");
+            client.info("Task started, begin loop...");
             int x = 0;
             while (taskRunning.get() && !Thread.currentThread().isInterrupted()) {
                 try {
@@ -384,14 +482,14 @@ public class mainTestCli {
                     Thread.sleep(1);
                     clienttestcli.RunAll();
                     if (x % 500 == 0) {
-                        System.out.println("No new workitem " + new java.util.Date());
+                        client.info("No new workitem " + new java.util.Date());
                         System.gc();
                     }
                 } catch (Exception e) {
-                    System.out.println("Error: " + e.toString());
+                    client.error("Error: " + e.toString());
                 }
             }
-            System.out.println("Task canceled.");
+            client.info("Task canceled.");
         });
     }
 
@@ -406,7 +504,7 @@ public class mainTestCli {
             Workitem workitem = client.popWorkitem(Workitem.class, popRequest, "downloads");
             
             if (workitem != null) {
-                System.out.println("Updating workitem: " + workitem.id);
+                client.info("Updating workitem: " + workitem.id);
                 
                 // Update the workitem state
                 workitem.state = "successful";
@@ -423,15 +521,15 @@ public class mainTestCli {
                 try {
                     // Send update
                     workitem = client.updateWorkitem(Workitem.class, updateRequest);
-                    System.out.println("Updated workitem state to: " + workitem.state);
+                    client.info("Updated workitem state to: " + workitem.state);
                 } finally {
                     builder.cleanup();
                 }
             } else {
-                System.out.println("No workitem available to update");
+                client.info("No workitem available to update");
             }
         } catch (Exception e) {
-            System.out.println("UpdateWorkitem error: " + e.getMessage());
+            client.error("UpdateWorkitem error: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -443,7 +541,7 @@ public class mainTestCli {
             Workitem workitem = client.popWorkitem(Workitem.class, popRequest, "downloads");
             
             if (workitem != null) {
-                System.out.println("Deleting workitem: " + workitem.id);
+                client.info("Deleting workitem: " + workitem.id);
                 
                 // Create delete request
                 DeleteWorkitem deleteRequest = new DeleteWorkitem.Builder(workitem.id).build();
@@ -451,15 +549,15 @@ public class mainTestCli {
                 // Send delete
                 boolean success = client.deleteWorkitem(deleteRequest);
                 if (success) {
-                    System.out.println("Workitem deleted successfully");
+                    client.info("Workitem deleted successfully");
                 } else {
-                    System.out.println("Failed to delete workitem");
+                    client.info("Failed to delete workitem");
                 }
             } else {
-                System.out.println("No workitem available to delete");
+                client.info("No workitem available to delete");
             }
         } catch (Exception e) {
-            System.out.println("DeleteWorkitem error: " + e.getMessage());
+            client.error("DeleteWorkitem error: " + e.getMessage());
             e.printStackTrace();
         }
     }
