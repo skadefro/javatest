@@ -127,6 +127,12 @@ public class mainTestCli {
             case "pd":
                 handleDeleteWorkitem();
                 break;
+            case "cc":
+                handleCustomCommand();
+                break;
+            case "rpa":
+                handleInvokeOpenRPA();
+                break;
             case "quit":
                 running = false;
                 break;
@@ -157,6 +163,8 @@ public class mainTestCli {
         System.out.println("  o    - Toggle f64 observable gauge");
         System.out.println("  o2   - Toggle u64 observable gauge");
         System.out.println("  o3   - Toggle i64 observable gauge");
+        System.out.println("  cc   - Get Clients using custom_command");
+        System.out.println("  rpa  - Invoke \"Who am I\" on robot \"allan5\"");
         System.out.println("  quit - Exit program");
     }
 
@@ -559,6 +567,39 @@ public class mainTestCli {
         } catch (Exception e) {
             client.error("DeleteWorkitem error: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+    private static void handleCustomCommand() {
+        try {
+            String result = client.customCommand(
+                new CustomCommandParameters.Builder()
+                    .command("getclients")
+                    .build(),
+                    10
+            );
+            System.out.println("CustomCommand result: " + result);
+            // Optionally, parse JSON and print details if needed
+            // ObjectMapper mapper = new ObjectMapper();
+            // List<?> clients = mapper.readValue(result, List.class);
+            // System.out.println("Client count: " + clients.size());
+        } catch (Exception e) {
+            System.out.println("CustomCommand error: " + e.getMessage());
+        }
+    }
+    private static void handleInvokeOpenRPA() {
+        try {
+            String result = client.invokeOpenRPA(
+                new InvokeOpenRPAParameters.Builder()
+                    .robotid("5ce94386320b9ce0bc2c3d07")
+                    .workflowid("5e0b52194f910e30ce9e3e49")
+                    .payload("{\"test\":\"test\"}")
+                    .rpc(false)
+                    .build(),
+                    10
+            );
+            System.out.println("InvokeOpenRPA result: " + result);
+        } catch (Exception e) {
+            System.out.println("InvokeOpenRPA error: " + e.getMessage());
         }
     }
 }
