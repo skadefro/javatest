@@ -12,7 +12,7 @@ mvn clean package
 To run the test application:
 ```bash
 mvn package
-java -jar target/test-client-0.0.2-jar-with-dependencies.jar
+java -jar target/test-client-0.0.1-jar-with-dependencies.jar
 ```
 github repository:
 ```

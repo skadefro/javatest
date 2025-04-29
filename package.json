@@ -1,7 +1,7 @@
 {
     "name": "javatest",
     "version": "1.0.2",
-    "main": "target/test-client-0.0.2-jar-with-dependencies.jar",
+    "main": "target/test-client-0.0.1-jar-with-dependencies.jar",
     "openiap": {
         "language": "java",
         "type": "jar",

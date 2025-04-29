@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.openiap</groupId>
     <artifactId>test-client</artifactId>
-    <version>0.0.2</version>
+    <version>0.0.</version>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
@@ -18,7 +18,7 @@
         <dependency>
             <groupId>io.openiap</groupId>
             <artifactId>client</artifactId>
-            <version>0.0.33</version>
+            <version>0.0.36</version>
         </dependency>
                 <!-- Jackson Core -->
         <dependency>
